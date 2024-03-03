@@ -1,0 +1,8 @@
+name = "rainet_access_battle"
+version = "0.1.0"
+description = "webserver for Steins;Gate board game"
+license = "GPL-3.0-or-later"
+
+authors = [
+    "Rostislav Misiura <rostislav9999@gmail.com>",
+]

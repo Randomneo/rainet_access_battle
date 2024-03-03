@@ -1,2 +1,3 @@
-# rainet_access_battle
-web server for Steins;Gate board game Rainet Access Battle
+# Rainet Access Battle
+
+This repo contains web server for Steins;Gate board game Rainet Access Battle.
