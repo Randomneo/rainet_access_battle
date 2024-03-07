@@ -3,7 +3,7 @@ from typing import Callable
 
 from .exceptions import InternalError
 from .piece import Piece, PieceType
-from .player import Player, PlayerMove
+from .player import Player, PlayerMove, PlayerSetup
 from .utils import invert_pos
 
 
@@ -81,3 +81,15 @@ class Board:
             return 'invalid pos_from + pos_to'
 
         return None
+
+    def validate_setup(self, setup: PlayerSetup) -> str | None:
+        links = len(list(filter(lambda x: x.piece_type is PieceType.link, setup.pieces)))
+        viruses = len(list(filter(lambda x: x.piece_type is PieceType.virus, setup.pieces)))
+        if links != 4:
+            return 'links_count_do_not_match 4'
+        if viruses != 4:
+            return 'viruses_count_do_not_match 4'
+        return None
+
+    def setup(self, player_setup: PlayerSetup) -> None:
+        self.pieces.extend(player_setup.pieces)

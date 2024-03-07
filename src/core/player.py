@@ -6,6 +6,7 @@ from typing import Sequence
 
 from .io_handler import IOHandler
 from .piece import Piece, PieceType
+from .utils import invert_pos
 
 
 class PlayerType(enum.StrEnum):
@@ -19,6 +20,11 @@ class PlayerMove:
     pos_from: tuple[int, int] | None
     pos_to: tuple[int, int] | None
     action: None = dataclasses.field(default=None)
+
+
+@dataclasses.dataclass
+class PlayerSetup:
+    pieces: tuple[Piece, ...]
 
 
 class Player():
@@ -56,21 +62,43 @@ class Player():
         pos_to = tuple(map(int, pos.split()))
         pos_from = (pos_from[0], pos_from[1])
         pos_to = (pos_to[0], pos_to[1])
+        if self.on_board_type is PlayerType.bottom:
+            pos_from = invert_pos(pos_from)
+            pos_to = invert_pos(pos_to)
         return PlayerMove(self, pos_from, pos_to)
+
+    async def get_setup(self) -> PlayerSetup:
+        await self.io_handler.send('setup: ')
+        pieces = await self.io_handler.read()
+        setup = []
+        preset_pos_list = [
+            (0, 0),
+            (1, 0),
+            (2, 0),
+            (3, 1),
+            (4, 1),
+            (5, 0),
+            (6, 0),
+            (7, 0),
+        ]
+        for pos, piece in zip(preset_pos_list, pieces.split(';')):
+            if self.on_board_type is PlayerType.bottom:
+                pos = invert_pos(pos)
+            setup.append(Piece(PieceType(piece), pos, self, is_on_board=True))
+
+        return PlayerSetup(pieces=tuple(setup))
 
     async def send_board_state(self, pieces: Sequence[Piece]) -> None:
         board_state = []
         for piece in pieces:
             if piece.is_on_board:
                 if piece.owner == self or piece.piece_type is PieceType.socket:
-                    board_state.append(','.join((
-                        piece.piece_type.value,
-                        *map(str, piece.position),
-                    )))
+                    piece_type = piece.piece_type.value
                 else:
-                    board_state.append(','.join((
-                        PieceType.enemy.value,
-                        *map(str, piece.position),
-                    )))
+                    piece_type = PieceType.enemy.value
+                board_state.append(','.join((
+                    piece_type,
+                    *map(str, piece.position),
+                )))
 
         await self.io_handler.send_board(';'.join(board_state))

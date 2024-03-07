@@ -12,29 +12,12 @@ class Game:
 
     def __init__(self, player1: Player, player2: Player) -> None:
         self.board = Board()
-
-        self.board.pieces.extend([
-            Piece(PieceType.link, (0, 0), player1, is_on_board=True),
-            Piece(PieceType.link, (1, 0), player1, is_on_board=True),
-            Piece(PieceType.link, (2, 0), player1, is_on_board=True),
-            Piece(PieceType.link, (3, 1), player1, is_on_board=True),
-            Piece(PieceType.virus, (4, 1), player1, is_on_board=True),
-            Piece(PieceType.virus, (5, 0), player1, is_on_board=True),
-            Piece(PieceType.virus, (6, 0), player1, is_on_board=True),
-            Piece(PieceType.virus, (7, 0), player1, is_on_board=True),
+        self.board.pieces.extend((
             Piece(PieceType.socket, (3, 0), player1, is_on_board=True),
             Piece(PieceType.socket, (4, 0), player1, is_on_board=True),
-            Piece(PieceType.link, (0, 7), player2, is_on_board=True),
-            Piece(PieceType.link, (1, 7), player2, is_on_board=True),
-            Piece(PieceType.link, (2, 7), player2, is_on_board=True),
-            Piece(PieceType.link, (3, 6), player2, is_on_board=True),
-            Piece(PieceType.virus, (4, 6), player2, is_on_board=True),
-            Piece(PieceType.virus, (5, 7), player2, is_on_board=True),
-            Piece(PieceType.virus, (6, 7), player2, is_on_board=True),
-            Piece(PieceType.virus, (7, 7), player2, is_on_board=True),
             Piece(PieceType.socket, (3, 7), player2, is_on_board=True),
             Piece(PieceType.socket, (4, 7), player2, is_on_board=True),
-        ])
+        ))
         self.players: tuple[Player, Player] = (player1, player2)
 
     async def send_state(self) -> None:
@@ -43,13 +26,25 @@ class Game:
                 self.board.state(invert=player.on_board_type is PlayerType.top)
             )
 
-    async def player_move(self, current_player: Player) -> PlayerMove:
+    async def player_move(self, current_player: Player) -> PlayerMove | None:
         while True:
             move = await current_player.get_move()
             if validation_error := self.board.validate_move(move):
                 await current_player.io_handler.send(validation_error)
             else:
                 return move
+        return None
+
+    async def player_setup(self, player: Player) -> None:
+        while True:
+            setup = await player.get_setup()
+            if validation_error := self.board.validate_setup(setup):
+                await player.io_handler.send(validation_error)
+            else:
+                return self.board.setup(setup)
+
+    async def setup(self) -> None:
+        await asyncio.gather(*map(self.player_setup, self.players))
 
     async def main_loop(self) -> None:
         current_player = self.players[0]

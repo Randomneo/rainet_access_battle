@@ -10,6 +10,7 @@ async def cli_game() -> None:
         player1=Player(1, PlayerType.top, CliHandler()),
         player2=Player(2, PlayerType.bottom, CliHandler()),
     )
+    await game.setup()
     await game.main_loop()
 
 
