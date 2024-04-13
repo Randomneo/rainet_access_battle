@@ -54,10 +54,10 @@ class Player():
         return {*players_pool}.difference({current_player}).pop()
 
     async def get_move(self) -> PlayerMove:
-        await self.io_handler.send('pos from: ')
+        await self.io_handler.send('awaiting_pos_from')
         pos = await self.io_handler.read()
         pos_from = tuple(map(int, pos.split()))
-        await self.io_handler.send('pos to: ')
+        await self.io_handler.send('awaiting_pos_to')
         pos = await self.io_handler.read()
         pos_to = tuple(map(int, pos.split()))
         pos_from = (pos_from[0], pos_from[1])
@@ -68,7 +68,7 @@ class Player():
         return PlayerMove(self, pos_from, pos_to)
 
     async def get_setup(self) -> PlayerSetup:
-        await self.io_handler.send('setup: ')
+        await self.io_handler.send('awaiting_board_setup')
         pieces = await self.io_handler.read()
         setup = []
         preset_pos_list = [

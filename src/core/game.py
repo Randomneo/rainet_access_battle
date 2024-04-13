@@ -19,12 +19,16 @@ class Game:
             Piece(PieceType.socket, (4, 7), player2, is_on_board=True),
         ))
         self.players: tuple[Player, Player] = (player1, player2)
+        self.end = asyncio.get_running_loop().create_future()
 
-    async def send_state(self) -> None:
+    async def send_state(self, player: Player) -> None:
+        await player.send_board_state(
+            self.board.state(invert=player.on_board_type is PlayerType.bottom)
+        )
+
+    async def send_game_start(self) -> None:
         for player in self.players:
-            await player.send_board_state(
-                self.board.state(invert=player.on_board_type is PlayerType.top)
-            )
+            await player.io_handler.send('game_start')
 
     async def player_move(self, current_player: Player) -> PlayerMove | None:
         while True:
@@ -48,8 +52,10 @@ class Game:
 
     async def main_loop(self) -> None:
         current_player = self.players[0]
+        await self.send_game_start()
+        await self.send_state(self.players[0])
+        await self.send_state(self.players[1])
         while True:
-            await self.send_state()
             player_move = None
             async with asyncio.timeout(self.PLAYER_TURN_TIMEOUT):
                 player_move = await self.player_move(current_player)
@@ -61,3 +67,9 @@ class Game:
                 break
 
             current_player = Player.switch(self.players, current_player)
+            await self.send_state(current_player)
+        self.end.set_result(True)
+
+    async def run(self):
+        await self.setup()
+        await self.main_loop()

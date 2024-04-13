@@ -1,3 +1,5 @@
+import asyncio
+import concurrent
 from typing import Protocol
 
 
@@ -12,7 +14,8 @@ class CliHandler:
         print(message)
 
     async def read(self) -> str:
-        return input()
+        with concurrent.futures.ThreadPoolExecutor(1, 'async_input') as executor:
+            return await asyncio.get_event_loop().run_in_executor(executor, input)
 
     async def send_board(self, board_state: str) -> None:
         print(CliHandler.make_cli_board(board_state))
